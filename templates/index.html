@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .calculator {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        .display {
+            width: 100%;
+            height: 60px;
+            border: none;
+            background: #f4f4f4;
+            text-align: right;
+            font-size: 24px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .mode {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .mode button {
+            flex: 1;
+            margin: 0 5px;
+            background: #bdc3c7;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .mode button:hover { background: #95a5a6; }
+        .mode .active { background: #3498db; }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        button {
+            height: 50px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #ddd; }
+        .number { background: #e0e0e0; }
+        .operator { background: #f39c12; color: white; }
+        .function { background: #3498db; color: white; }
+        .memory { background: #9b59b6; color: white; }
+        .equals { background: #e74c3c; color: white; grid-column: span 2; }
+        .clear { background: #95a5a6; color: white; }
+        .history {
+            margin-top: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .history ul { list-style: none; padding: 0; }
+        .history li { padding: 5px 0; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <input type="text" id="display" class="display" readonly>
+        <div class="mode">
+            <button id="degrees" onclick="setMode('degrees')">Degrees</button>
+            <button id="radians" onclick="setMode('radians')" class="active">Radians</button>
+        </div>
+        <div class="buttons">
+            <button class="clear" onclick="clearDisplay()">C</button>
+            <button class="function" onclick="appendToDisplay('(')">(</button>
+            <button class="function" onclick="appendToDisplay(')')">)</button>
+            <button class="memory" onclick="memoryOp('MC')">MC</button>
+            <button class="memory" onclick="memoryOp('MR')">MR</button>
+            
+            <button class="number" onclick="appendToDisplay('7')">7</button>
+            <button class="number" onclick="appendToDisplay('8')">8</button>
+            <button class="number" onclick="appendToDisplay('9')">9</button>
+            <button class="operator" onclick="appendToDisplay('/')">/</button>
+            <button class="memory" onclick="memoryOp('M+')">M+</button>
+            
+            <button class="number" onclick="appendToDisplay('4')">4</button>
+            <button class="number" onclick="appendToDisplay('5')">5</button>
+            <button class="number" onclick="appendToDisplay('6')">6</button>
+            <button class="operator" onclick="appendToDisplay('*')">*</button>
+            <button class="memory" onclick="memoryOp('M-')">M-</button>
+            
+            <button class="number" onclick="appendToDisplay('1')">1</button>
+            <button class="number" onclick="appendToDisplay('2')">2</button>
+            <button class="number" onclick="appendToDisplay('3')">3</button>
+            <button class="operator" onclick="appendToDisplay('-')">-</button>
+            <button class="function" onclick="appendToDisplay('^')">^</button>
+            
+            <button class="number" onclick="appendToDisplay('0')">0</button>
+            <button class="number" onclick="appendToDisplay('.')">.</button>
+            <button class="function" onclick="appendToDisplay('pi')">π</button>
+            <button class="function" onclick="appendToDisplay('e')">e</button>
+            <button class="function" onclick="appendToDisplay('fact(')">!</button>
+            
+            <button class="function" onclick="appendToDisplay('sin(')">sin</button>
+            <button class="function" onclick="appendToDisplay('cos(')">cos</button>
+            <button class="function" onclick="appendToDisplay('tan(')">tan</button>
+            <button class="function" onclick="appendToDisplay('log(')">log</button>
+            <button class="function" onclick="appendToDisplay('ln(')">ln</button>
+            
+            <button class="function" onclick="appendToDisplay('asin(')">asin</button>
+            <button class="function" onclick="appendToDisplay('acos(')">acos</button>
+            <button class="function" onclick="appendToDisplay('atan(')">atan</button>
+            <button class="function" onclick="appendToDisplay('exp(')">e^x</button>
+            <button class="function" onclick="appendToDisplay('sqrt(')">√</button>
+            
+            <button class="function" onclick="appendToDisplay('sinh(')">sinh</button>
+            <button class="function" onclick="appendToDisplay('cosh(')">cosh</button>
+            <button class="function" onclick="appendToDisplay('tanh(')">tanh</button>
+            <button class="operator" onclick="appendToDisplay('+')">+</button>
+            <button class="equals" onclick="calculate()">=</button>
+        </div>
+        <div class="history">
+            <h4>History</h4>
+            <ul id="historyList"></ul>
+        </div>
+    </div>
+
+    <script>
+        let mode = 'radians';
+        let history = [];
+
+        function setMode(newMode) {
+            mode = newMode;
+            document.getElementById('degrees').classList.toggle('active', mode === 'degrees');
+            document.getElementById('radians').classList.toggle('active', mode === 'radians');
+        }
+
+        function appendToDisplay(value) {
+            document.getElementById('display').value += value;
+        }
+
+        function clearDisplay() {
+            document.getElementById('display').value = '';
+        }
+
+        function memoryOp(op) {
+            const display = document.getElementById('display');
+            const value = display.value;
+            if (op === 'MC' || op === 'MR') {
+                display.value = op;
+            } else {
+                display.value = op + ' ' + (value || '0');
+            }
+            calculate();
+        }
+
+        async function calculate() {
+            const display = document.getElementById('display');
+            const expression = display.value;
+            if (!expression) return;
+
+            console.log('Sending:', expression, mode);  // Debug log
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expression, mode })
+                });
+                const data = await response.json();
+                console.log('Response:', data);  // Debug log
+                display.value = data.result !== undefined ? data.result : data.error;
+                
+                // Update history
+                if (data.result !== undefined) {
+                    history.unshift(`${expression} = ${data.result}`);
+                    if (history.length > 5) history.pop();
+                    updateHistory();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                display.value = 'Error: ' + error.message;
+            }
+        }
+
+        function updateHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = history.map(item => `<li>${item}</li>`).join('');
+        }
+    </script>
+</body>
+</html>
